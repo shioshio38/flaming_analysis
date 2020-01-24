@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 
+
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+import os
+import requests
+from requests_oauthlib import OAuth1
+import json
+from dateutil.relativedelta import relativedelta
+from datetime import datetime,timezone,timedelta
+import logging
+import time
+import pprint
+from mog_op import MongoOp
+import copy
+import pymongo
+JST=timezone(timedelta(hours=+9), 'JST')
+
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',level=logging.INFO)
+
+AT=os.environ.get('access_token')
+ATS=os.environ.get("access_token_secret")
+CK=os.environ.get('consumer_key')
+CKS=os.environ.get('consumer_key_secret')
+
+auth = OAuth1(CK,CKS,AT,ATS)
+
+SLACK_TOKEN=os.environ.get('SLACK_TOKEN')
+
+class FetchTweet(object):
+    def __init__(self,mp):
+        self.mp=mp
+        self.old_mid=-1
+        self.mid=-1
+        self.crlist=[]
+        self.tdate=None
+    def query(self,query):
+        self.query=query
+    def term(self,start,end):
+        self.thdate=start.replace(tzinfo=None)
+        ##'%Y-%m-%d_%H:%M:%S_JST'
+        tformat='%Y-%m-%d_%H:%M:%S_UTC'
+        tm='since:{} until:{}'.format(start.strftime(tformat),\
+                                      end.strftime(tformat))
+        self.term=tm
+    def params(self,params):
+        self.params=' '.join(['{}:{}'.format(a,b) for a,b in params.items()])
+    def build_query(self):
+        return "{} {} {}".format(self.query,self.term,self.params)
+    def get_rate_limit(self):
+        logging.info("-"*200)
+        d=self.__get_rate_limit()
+        #logging.info(u"d={}".format(d))
+        pprint.pprint(d)
+    def invoke_fetch(self):
+        sq=self.build_query()
+        cnt=0
+        while True:
+            logging.info("-"*200)
+            d=self.__get_tweet(sq,self.mid)
+            logging.debug(u"d={}".format(d))
+            if not d:
+                logging.error(u"d {} is None".format(d))
+                break
+            self.mid,crdate=self.mp.insert_data(d)
+            if cnt%60==0 and crdate:
+                dt=crdate+timedelta(hours=9)
+                dt=dt.replace(tzinfo=JST)
+                msg=u"query={} cnt={} created_at={} UST {} JST".format(sq,cnt,crdate,dt)
+                slack_post(msg)
+            if self.mid==self.old_mid:
+                logging.error("finish mid={} old_mid={}".format(self.mid,self.old_mid))
+                break
+            if self.old_mid:
+                differ=self.mid-self.old_mid
+                msg="time sleep c={} mid={} old_mid={} differ={}".format(cnt,self.mid,self.old_mid,differ)
+                logging.info(msg)
+            if crdate and self.thdate >= crdate.replace(tzinfo=None):
+                logging.error("finish thdate={} crdate={}".format(self.thdate,crdate))
+                break
+            if self.mid and self.mid==-1:
+                logging.error("finish mid={}".format(self.mid))
+                break
+            if crdate:
+                c2=sorted(self.crlist)
+                if len(c2) > 10:
+                    ccd=c2[9]
+                    if crdate>ccd:
+                        logging.error("finish cdate={} ccd={}".format(crdate,ccd))
+                        break
+                self.crlist.append(copy.copy(crdate))
+            self.old_mid=self.mid
+            self.mid=self.mid-1
+            cnt+=1
+            time.sleep(10)
+    def __get_rate_limit(self):
+        url="https://api.twitter.com/1.1/application/rate_limit_status.json"
+        r = requests.get(url, auth=auth)
+        if r.status_code != 200:
+            logging.error("Error code: {} {}".format(r.status_code,r))
+            return None
+        return r.json()
+    
+    
+    def __get_tweet(self,search_word,max_id=None):
+        logging.info("max_id={}".format(max_id))
+        cnt=100
+        url="https://api.twitter.com/1.1/search/universal.json"
+        params = {
+            "q": search_word,
+            "result_type": "recent",
+            "count": cnt,
+            'tweet_mode': 'extended',
+        }
+        if max_id:
+            params['q']=params['q']+' max_id:{}'.format(max_id)
+        logging.info(params)
+        r = requests.get(url, auth=auth, params=params)
+        if r.status_code != 200:
+            logging.error("Error code: {} {}".format(r.status_code,r))
+            return None
+        return r.json()
+
