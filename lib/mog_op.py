@@ -4,6 +4,7 @@
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 import os
+import hashlib
 from datetime import datetime,timezone,timedelta
 JST=timezone(timedelta(hours=+9), 'JST')
 import logging
@@ -29,21 +30,15 @@ class MongoOp(object):
     def __del__(self):
         if self.mp:
             self.mp.close()
-    def conv_date(self):
-        for i,a in enumerate(self.col.find({"created_at":{"$type":"string"}},{"created_at":1})):
-            dt=a['created_at']
-            dt=datetime.strptime(dt,"%a %b %d %H:%M:%S %z %Y")
-            logging.info("i={} dt={}".format(i,dt))
-            aid=a['_id']
-            self.col.update({'_id':aid},{"$set":{"created_at":dt}})
     
     def insert_data(self,d):
         tids=[]
         crdate=None
-        if 'modules' in d:
-            for i,a in enumerate(d['modules']):
-                if not 'status' in a:continue
-                a=a['status']['data']
+        if 'statuses' in d:
+            for i,a in enumerate(d['statuses']):
+                #logging.info('a={}'.format(a))
+                #if not 'status' in a:continue
+                #a=a['status']['data']
                 tid=int(a['id'])
                 tids.append(tid)
                 if 'full_text' in a: #for tweet_mode=extended
@@ -53,6 +48,7 @@ class MongoOp(object):
                 dt=a['created_at']
                 dt=datetime.strptime(dt,"%a %b %d %H:%M:%S %z %Y")
                 a['created_at']=dt
+                a['packet_id']=hashlib.md5(str(a['id']).encode('utf-8')).hexdigest()[:2]
                 crdate=dt
                 if i==0:
                     dt0=dt.replace(tzinfo=JST)

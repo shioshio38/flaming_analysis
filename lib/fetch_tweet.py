@@ -17,7 +17,7 @@ import copy
 import pymongo
 JST=timezone(timedelta(hours=+9), 'JST')
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',level=logging.DEBUG)
 
 AT=os.environ.get('access_token')
 ATS=os.environ.get("access_token_secret")
@@ -26,7 +26,7 @@ CKS=os.environ.get('consumer_key_secret')
 
 auth = OAuth1(CK,CKS,AT,ATS)
 
-SLACK_TOKEN=os.environ.get('SLACK_TOKEN')
+TWITTER_SEARCH_URL='https://api.twitter.com/1.1/search/tweets.json'
 
 class FetchTweet(object):
     def __init__(self,mp):
@@ -34,32 +34,19 @@ class FetchTweet(object):
         self.old_mid=-1
         self.mid=-1
         self.crlist=[]
-        self.tdate=None
+        self.thdate=None
     def query(self,query):
         self.query=query
-    def term(self,start,end):
-        self.thdate=start.replace(tzinfo=None)
-        ##'%Y-%m-%d_%H:%M:%S_JST'
-        tformat='%Y-%m-%d_%H:%M:%S_UTC'
-        tm='since:{} until:{}'.format(start.strftime(tformat),\
-                                      end.strftime(tformat))
-        self.term=tm
-    def params(self,params):
-        self.params=' '.join(['{}:{}'.format(a,b) for a,b in params.items()])
-    def build_query(self):
-        return "{} {} {}".format(self.query,self.term,self.params)
-    def get_rate_limit(self):
-        logging.info("-"*200)
-        d=self.__get_rate_limit()
-        #logging.info(u"d={}".format(d))
-        pprint.pprint(d)
+    def term(self,end):
+        start = end - timedelta(days=7)
+        self.thdate = start.replace(tzinfo=None)
+        self.until = end.strftime('%Y-%m-%d')
     def invoke_fetch(self):
-        sq=self.build_query()
         cnt=0
         while True:
             logging.info("-"*200)
-            d=self.__get_tweet(sq,self.mid)
-            logging.debug(u"d={}".format(d))
+            d=self.__get_tweet(self.query,self.mid)
+            logging.debug(u"d={}".format(d.keys()))
             if not d:
                 logging.error(u"d {} is None".format(d))
                 break
@@ -67,8 +54,8 @@ class FetchTweet(object):
             if cnt%60==0 and crdate:
                 dt=crdate+timedelta(hours=9)
                 dt=dt.replace(tzinfo=JST)
-                msg=u"query={} cnt={} created_at={} UST {} JST".format(sq,cnt,crdate,dt)
-                slack_post(msg)
+                msg=u"query={} cnt={} created_at={} UST {} JST".format(self.query,cnt,crdate,dt)
+                logging.info(msg)
             if self.mid==self.old_mid:
                 logging.error("finish mid={} old_mid={}".format(self.mid,self.old_mid))
                 break
@@ -106,15 +93,15 @@ class FetchTweet(object):
     def __get_tweet(self,search_word,max_id=None):
         logging.info("max_id={}".format(max_id))
         cnt=100
-        url="https://api.twitter.com/1.1/search/universal.json"
+        url=TWITTER_SEARCH_URL
         params = {
             "q": search_word,
             "result_type": "recent",
             "count": cnt,
-            'tweet_mode': 'extended',
+            'until':self.until
         }
-        if max_id:
-            params['q']=params['q']+' max_id:{}'.format(max_id)
+        if max_id > 0:
+            params['max_id'] = max_id
         logging.info(params)
         r = requests.get(url, auth=auth, params=params)
         if r.status_code != 200:

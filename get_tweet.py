@@ -17,18 +17,14 @@ JST=timezone(timedelta(hours=+9), 'JST')
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',level=logging.INFO)
 
 def get_tw():
-    query=u'"動物" OR "猫"'
-    params={'lang':'ja','include':'retweets'}
-    start=datetime(2020,1,20)
-    end=datetime(2020,1,21)
-    logging.info(u"start={} end={}".format(start,end))
+    query=u'"猫" OR "犬"'
+    until=datetime(2020,1,21)
     col='cat'
     mp=MongoOp('localhost',col,db='twitter_fetch')
     ft=FetchTweet(mp)
-    logging.info(u"start={} end={}".format(start,eday))
-    ft.term(start,eday)
+    logging.info(u"until={}".format(until))
+    ft.term(until)
     ft.query(query)
-    ft.params(params)
     ft.invoke_fetch()
 
 def main():
