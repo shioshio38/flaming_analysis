@@ -35,6 +35,9 @@ class FetchTweet(object):
         self.mid=-1
         self.crlist=[]
         self.thdate=None
+        self.rate_limit_limit=180
+        self.rate_limit_remaining=180
+        self.rate_limit_lower_limit = int(180*0.2)
     def query(self,query):
         self.query=query
     def term(self,end):
@@ -81,15 +84,13 @@ class FetchTweet(object):
             self.mid=self.mid-1
             cnt+=1
             time.sleep(10)
-    def __get_rate_limit(self):
-        url="https://api.twitter.com/1.1/application/rate_limit_status.json"
-        r = requests.get(url, auth=auth)
-        if r.status_code != 200:
-            logging.error("Error code: {} {}".format(r.status_code,r))
-            return None
-        return r.json()
-    
-    
+            if self.rate_limit_lower_limit  > self.rate_limit_remaining:
+                time.sleep(100)
+    def __get_rate_limit(self,headers):
+        self.rate_limit_limit_remaing = int(headers['x-rate-limit-remaining'])
+        self.rate_limit_limit=int(headers['x-rate-limit-limit'])
+        self.rate_limit_lower_limit = int(self.rate_limit_limit*0.2)
+        
     def __get_tweet(self,search_word,max_id=None):
         logging.info("max_id={}".format(max_id))
         cnt=100
@@ -104,6 +105,7 @@ class FetchTweet(object):
             params['max_id'] = max_id
         logging.info(params)
         r = requests.get(url, auth=auth, params=params)
+        self.__get_rate_limit(r.headers)
         if r.status_code != 200:
             logging.error("Error code: {} {}".format(r.status_code,r))
             return None

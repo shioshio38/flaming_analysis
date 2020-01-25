@@ -36,9 +36,6 @@ class MongoOp(object):
         crdate=None
         if 'statuses' in d:
             for i,a in enumerate(d['statuses']):
-                #logging.info('a={}'.format(a))
-                #if not 'status' in a:continue
-                #a=a['status']['data']
                 tid=int(a['id'])
                 tids.append(tid)
                 if 'full_text' in a: #for tweet_mode=extended
