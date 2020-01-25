@@ -16,11 +16,14 @@ JST=timezone(timedelta(hours=+9), 'JST')
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',level=logging.INFO)
 
+DATABASE = os.environ.get('MONGO_DB')
+MONGO_HOST = os.environ.get('MONGO_HOST')
+COLLECTION = os.environ.get('COLLECTION')
+
 def get_tw():
-    query=u'"猫" OR "犬"'
+    query=u'"猿" OR "雉"'
     until=datetime(2020,1,21)
-    col='cat'
-    mp=MongoOp('localhost',col,db='twitter_fetch')
+    mp=MongoOp(MONGO_HOST,COLLECTION,db=DATABASE)
     ft=FetchTweet(mp)
     logging.info(u"until={}".format(until))
     ft.term(until)

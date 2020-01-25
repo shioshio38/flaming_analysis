@@ -1,0 +1,126 @@
+
+{# ボタン制御 #}
+
+{% macro is_check(a,n) -%}
+{%if n in a and a[n]==True %}
+{{n}}_red
+{% else %}
+{{n}}
+{% endif %}
+{%- endmacro  %}
+
+{# メインコンテンツ表示 #}
+
+{% macro show_term(outd) -%}
+{% for a,b in outd.items() %}
+<div class="term">
+  <div>
+    <h2>{{a}}</h2>
+  </div>
+  <div>
+    <h4>packet_id={{packet_id}}</h4>
+  </div>
+  <div class="count">
+    <h3>cnt={{b.cnt}}&nbsp;cnt2={{b.cnt2}}</h3>
+  </div>
+  <div class="header">
+    <table border="1">
+      <tr>
+	<th>種別</th>
+	<th>批判</th><th>同調</th><th>擁護・反発</th>
+	<th>想起感想</th>
+	<th>報道、事実、まとめ、その他</th>
+	<th>判別不明</th><th>重複</th><th>無関係</th><th>チェック済み件数</th><th>未処理</th>
+      </tr>
+      <tr>
+	<td>tweet数</td>
+	<td>{{b.eval_data['criticism']}}</td><td>{{b.eval_data['intoline']}}</td>
+	<td>{{b.eval_data['adovocacy']}}</td>
+	<td>{{b.eval_data['impression']}}</td>
+	<td>{{b.eval_data['other']}}</td><td>{{b.eval_data['unknown']}}</td>
+	<td>{{b.eval_data['duplicate']}}</td><td>{{b.eval_data['irrelevant']}}</td>
+	<td>{{b.tall}}</td><td>{{b.other}}</td>
+      </tr>
+      <tr>
+	<td>ユニークユーザー数</td>
+	<td>{{b.eval_user['criticism']}}</td><td>{{b.eval_user['intoline']}}</td>
+	<td>{{b.eval_user['adovocacy']}}</td>
+	<td>{{b.eval_user['impression']}}</td>
+	<td>{{b.eval_user['other']}}</td><td>{{b.eval_user['unknown']}}</td>
+	<td>{{b.eval_user['duplicate']}}</td><td>{{b.eval_user['irrelevant']}}</td>
+	<td>{{b.uall}}</td><td>{{b.other_user}}</td>
+      </tr>
+      <tr>
+	<td>割合(95%CI))</td>
+	<td>{{b.interval_data['criticism']}}</td><td>{{b.interval_data['intoline']}}</td>
+	<td>{{b.interval_data['adovocacy']}}</td>
+	<td>{{b.interval_data['impression']}}</td>
+	<td>{{b.interval_data['other']}}</td><td>{{b.interval_data['unknown']}}</td>
+	<td>{{b.interval_data['duplicate']}}</td><td>{{b.interval_data['irrelevant']}}</td>
+	<td>N/A</td><td>N/A</td>
+      </tr>
+
+    </table>
+  </div>
+  <div class="content">
+    {% for o in b.outs %}
+    <p>
+      <a target="_blank" href="{{o['href']}}">
+	<strong>{{o['number']}}</strong>
+      </a>
+      <span>{{o['created_at']}}</span>
+      &nbsp;<button id="criticism_{{o['id']}}" data-col_name="{{col_name}}" data-id="{{o['id']}}" data-event="criticism" class="{{is_check(o,'criticism')}}">批判</button>
+      &nbsp;<button id="intoline_{{o['id']}}" data-col_name="{{col_name}}"  data-id="{{o['id']}}" data-event="intoline" class="{{is_check(o,'intoline')}}" >同調</button>
+      &nbsp;<button id="adovocacy_{{o['id']}}" data-col_name="{{col_name}}"  data-id="{{o['id']}}" data-event="adovocacy" class="{{is_check(o,'adovocacy')}}" >擁護・反発</button>
+      &nbsp;<button id="impression_{{o['id']}}" data-col_name="{{col_name}}"  data-id="{{o['id']}}" data-event="impression" class="{{is_check(o,'impression')}}" >想起・感想</button>
+      &nbsp;<button id="other_{{o['id']}}" data-col_name="{{col_name}}"  data-id="{{o['id']}}" data-event="other" class="{{is_check(o,'other')}}" >報告まとめ</button>
+      &nbsp;<button id="unknown_{{o['id']}}" data-col_name="{{col_name}}"  data-id="{{o['id']}}" data-event="unknown" class="{{is_check(o,'unknown')}}" >判別不明</button>
+      &nbsp;<button id="duplicate_{{o['id']}}" data-col_name="{{col_name}}"  data-id="{{o['id']}}" data-event="duplicate" class="{{is_check(o,'duplicate')}}" >連ツイ重複</button>
+      &nbsp;<button id="irrelevant_{{o['id']}}" data-col_name="{{col_name}}"  data-id="{{o['id']}}" data-event="irrelevant" class="{{is_check(o,'irrelevant')}}" >話題無関係</button>
+      &nbsp;<button id="reset_{{o['id']}}" data-col_name="{{col_name}}"  data-id="{{o['id']}}" data-event="reset" class="{{is_check(o,'reset')}}" >リセット</button>
+      <br/>
+      &nbsp;<span>{{o['text']}}</span>
+      &nbsp;<span><strong>{{o['user_name']}}</strong></span>
+    </p>
+    {% endfor %}
+  </div> <!-- cntent -->
+  {% endfor %}
+</div> {# term #}
+{%- endmacro %}
+
+{# main #}
+
+ <!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='tw.js') }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='tw.css') }}">
+  </head>
+  
+  <body>
+    <div class="container">
+      <div class="header">
+	<a href="{{url_for('index')}}">Top</a>
+	<h3 class="text-muted">{{col_name}}</h3>
+	{{show_term(outd)}}
+      </div> {# header#}
+      <div class="footer">
+	<h3>packet list</h3>
+	<h4>current packet_id={{packet_id}}</h4>
+	{% for kk in packet_list %}
+	<span>
+	  <a href="{{url_for('get_data',col_name=col_name,packet_id=kk['_id'])}}">
+	    {{kk['_id']}},{{kk['count']}}&nbsp;
+	  </a>
+	</span>
+	{% endfor %}
+      </div>  {# footer #}
+    </div>  {# container #}
+  </body>
+</html>

@@ -1,0 +1,59 @@
+button.criticism_red{
+    background-color: red;
+    color:white;
+}
+button.intoline_red{
+    background-color: red;
+    color:white;
+
+}
+button.adovocacy_red{
+    background-color: red;
+    color:white;
+}
+button.impression_red{
+    background-color: red;
+    color:white;
+}
+button.other_red{
+    background-color: red;
+    color:white;
+}
+button.irrelevant_red{
+    background-color: red;
+    color:white;
+}
+button.duplicate_red{
+    background-color: red;
+    color:white;
+}
+button.reset_red{
+    background-color: red;
+    color:white;
+}
+button.unknown_red{
+    background-color: red;
+    color:white;
+}
+#acMenu dt{
+    display:block;
+/*
+    width:200px;
+    height:50px;
+    line-height:50px;
+    text-align:center;
+*/
+    border:#333 0.5px solid;
+    cursor:pointer;
+}
+#acMenu dd{
+    background:#f8f8f8;
+    /*
+    width:200px;
+    height:50px;
+    line-height:50px;
+    text-align:center;
+    */
+    border:#333 0.5px solid;
+    display:none;
+}

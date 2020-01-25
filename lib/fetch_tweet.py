@@ -17,7 +17,7 @@ import copy
 import pymongo
 JST=timezone(timedelta(hours=+9), 'JST')
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',level=logging.INFO)
 
 AT=os.environ.get('access_token')
 ATS=os.environ.get("access_token_secret")

@@ -8,11 +8,14 @@ import hashlib
 from datetime import datetime,timezone,timedelta
 JST=timezone(timedelta(hours=+9), 'JST')
 import logging
-from pymongo import MongoClient,ASCENDING
+from pymongo import MongoClient,ASCENDING,DESCENDING
 MONGO_HOST=os.environ.get("MONGO_HOST")
 MONGO_USER=os.environ.get("MONGO_USER")
 PASSWORD=os.environ.get("PASSWORD")
 AUTHSOURCE=os.environ.get("AUTHSOURCE")
+from bson.codec_options import CodecOptions
+import pytz
+timezone = pytz.timezone('Asia/Tokyo')
 
 class MongoOp(object):
     def __init__(self,host,col,db='twitter'):
@@ -22,11 +25,24 @@ class MongoOp(object):
                                       password=PASSWORD,
                                       authSource=AUTHSOURCE,
                                       authMechanism='SCRAM-SHA-1')
+        
         self.db=self.mp[db]
         self.col=self.db[col]
         self.col.create_index('created_at')
         self.col.create_index([('id',ASCENDING),('text',ASCENDING)])
-
+        coldict={}
+        for n in self.db.list_collection_names():
+            coldict[n]=self.db.get_collection(n).\
+                        with_options(codec_options=CodecOptions(tz_aware=True, tzinfo=timezone))
+        for k,v in coldict.items():
+            v.create_index('user.id')
+            for c in ('criticism','unknown', 'adovocacy', 'intoline', 'duplicate', 'other', 'irrelevant','impression'):
+                v.create_index(c)
+                v.create_index([(c,ASCENDING),
+                                ('user.id',ASCENDING)])
+        logging.info(coldict)
+        self.coldict=coldict
+        
     def __del__(self):
         if self.mp:
             self.mp.close()
@@ -61,3 +77,10 @@ class MongoOp(object):
             mint=min(tids)
         return mint,crdate
         
+    def get_date_range(self,col):
+        ks = 'created_at'
+        for c in col.find({},{ks:1}).sort([(ks,DESCENDING)]).limit(1):
+            last_one = c[ks]
+        for c in col.find({},{ks:1}).sort([(ks,ASCENDING)]).limit(1):
+            first_one = c[ks]
+        return (first_one,last_one)
