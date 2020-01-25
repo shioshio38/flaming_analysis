@@ -30,6 +30,7 @@ class MongoOp(object):
         self.col=self.db[col]
         self.col.create_index('created_at')
         self.col.create_index([('id',ASCENDING),('text',ASCENDING)])
+        self.col.create_index('id')
         coldict={}
         for n in self.db.list_collection_names():
             coldict[n]=self.db.get_collection(n).\
