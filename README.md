@@ -82,6 +82,10 @@ python3 srv.py
 ```
 でポート5000で立ち上がる。
 
+### 注意
+
+GCPやEC2などを利用する際は、VPCなどで、port 5000番を開けておくこと。
+
 ## 使い方
 
 ### TOPページ
@@ -100,3 +104,11 @@ python3 srv.py
 ![使い方](./doc/image/useage.png)
 
 右の番号で、オリジナルのtweetに飛ぶことが出来る。
+
+# テスト環境
+
+```
+"Ubuntu 18.04.3 LTS (Bionic Beaver)"
+"Python 3.6.9 (default, Nov  7 2019, 10:44:02)"
+```
+
